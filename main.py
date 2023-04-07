@@ -37,11 +37,13 @@ async def get_tee(username: str) -> int:
 async def update_tee() -> None:
     for id, row in df.iterrows():
         df.at[id, "last_tee"] = row["tee"]
-        df.at[id, "tee"] = get_tee(row["username"]) - row["initial_tee"]
+        tee = await get_tee(row["username"])
+        df.at[id, "tee"] = tee - row["initial_tee"]
+    df.to_csv("users.csv", index=False)
     return
 
 async def create_message() -> str:
-    update_tee()
+    await update_tee()
     updates = []
     message = ""
     for _, row in df.iterrows():
@@ -71,12 +73,12 @@ async def on_ready():
 
 @bot.command(name='update_tee')
 async def update(ext):
-    message = create_message()
+    message = await create_message()
     await ext.send(message)
 
 @tasks.loop(seconds=60)
 async def loop():
-    message = create_message()
+    message = await create_message()
     channel = client.get_channel(int(os.environ["CHANNEL_ID"]))
     await channel.send(message)
 
